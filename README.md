@@ -152,7 +152,7 @@ roslaunch moby_navigation navigation.launch use_sim_time:=true
 ### Real Robot
 
 #### Moby Setting
-- Change the Moby config in ```moby-ros2/moby_bringup/param/moby_config.yaml```
+- Change the Moby config in ```moby-ros/moby_bringup/launch/moby_bringup.launch```
 * Moby Type
   - Robot type [moby_rp, moby_agri]
 * Step IP
