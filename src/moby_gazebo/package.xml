@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package>
+  <name>moby_gazebo</name>
+  <version>1.0.0</version>
+  <description>The moby_gazebo package</description>
+  <maintainer email="nguyen.pham@neuromeka.com">Nguyen Pham</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>gazebo_plugins</run_depend>
+  <run_depend>gazebo_ros</run_depend>
+  <run_depend>gazebo_ros_control</run_depend>
+  <run_depend>joint_state_publisher</run_depend>
+  <run_depend>robot_state_publisher</run_depend>
+  <run_depend>moby_description</run_depend>
+  <run_depend>xacro</run_depend>
+
+  <!-- <build_depend>rospy</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tf</build_depend> -->
+
+  <run_depend>rospy</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>tf</run_depend>
+
+  <export>
+    <gazebo_ros gazebo_media_path="${prefix}" />
+    <gazebo_ros gazebo_model_path="${prefix}/models" />
+  </export>
+
+</package>

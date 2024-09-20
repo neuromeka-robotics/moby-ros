@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!--ROBOT-->
+	<arg name="prefix" 		  default=""/>
+	<arg name="name" 		    default="moby"/>
+  <arg name="moby_type" 	default="moby_rp"/>
+  <arg name="rviz" 	      default="false"/>
+  <arg name="world_file"  default="example"/>
+
+  <include file="$(find moby_description)/launch/moby_description.launch">
+    <arg name="prefix"      value="$(arg prefix)"/>
+    <arg name="name" 	      value="$(arg name)"/>
+    <arg name="moby_type" 	value="$(arg moby_type)"/>
+    <arg name="rviz" 		    value="$(arg rviz)"/>
+    <arg name="sim_gazebo"  default="true"/>
+    <arg name="joint_state" default="false"/>
+  </include>
+
+  <!--GAZEBO-->
+  <!-- <env name="GAZEBO_MODEL_PATH" value="$(find moby_gazebo)/models"/> -->
+
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+
+  <!-- Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find moby_gazebo)/worlds/$(arg world_file).world"/>
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- Spawn a URDF robot -->
+  <arg name="robot_name"  default="/"/>
+  <arg name="x"           default="0.0"/>
+  <arg name="y"           default="0.0"/>
+  <arg name="z"           default="0.0"/>
+  <arg name="yaw"         default="0.0"/>
+  <!-- <arg name="tf_prefix"   default=""/> -->
+
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" 
+    args="-urdf 
+          -param /robot_description 
+          -model $(arg robot_name) 
+          -x $(arg x)
+          -y $(arg y)
+          -z $(arg z)
+          -Y $(arg yaw)" />
+
+  <!-- Controller file -->
+  <rosparam file="$(find moby_gazebo)/controller/moby_rp_controllers.yaml" command="load"/>
+
+  <node name="joint_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
+    args="joint_state_controller joint_trajectory_controller traction_motor_controller rotation_motor_controller"/>
+  
+  <node pkg="moby_gazebo" type="swerve_drive_controller.py" name="swerve_drive_controller" output="screen">
+    <param name="use_sim_time" value="true" />
+  </node>
+
+  <!-- for servoing -->
+  <!-- <node name="ros_control_controller_manager" pkg="controller_manager" type="controller_manager" respawn="false" output="screen" 
+      args="load joint_group_position_controller"/> -->
+  
+</launch>

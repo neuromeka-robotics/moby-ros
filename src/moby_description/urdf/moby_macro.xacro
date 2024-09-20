@@ -1,0 +1,298 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+
+    <xacro:include filename="$(find moby_description)/urdf/moby_transmissions.xacro"/>
+    <xacro:include filename="$(find moby_description)/urdf/moby_common.xacro"/>
+    <xacro:include filename="$(find moby_description)/urdf/materials.xacro"/>
+
+    <xacro:include filename="$(find moby_description)/urdf/sick_tim771s.urdf.xacro" />
+
+    <xacro:include filename="$(find moby_description)/urdf/realsense_d415.urdf.xacro" />
+    <xacro:include filename="$(find moby_description)/urdf/realsense_d435.urdf.xacro" />
+
+    <xacro:macro name="moby_robot" params="
+        name
+        moby_type
+        prefix
+        *origin
+        joint_limits_parameters_file
+        kinematics_parameters_file
+        physical_parameters_file
+        visual_parameters_file
+        transmission_hw_interface:=hardware_interface/PositionJointInterface
+        sim_gazebo:=false">
+
+        <!-- Load configuration data from the provided .yaml files -->
+        <xacro:define_initialize   visual_parameters_file="${visual_parameters_file}"/>
+
+        <xacro:property name="indy_material" value="metal_white"/>
+        <xacro:property name="moby_top_material" value="metal_white"/>
+        <xacro:property name="moby_bottom_material" value="metal_grey"/>
+        <xacro:property name="moby_rot_motor" value="metal_white"/>
+        <xacro:property name="moby_wheel" value="metal_grey"/>
+
+        <xacro:property name="gazebo_white" value="Gazebo/White"/>
+        <xacro:property name="gazebo_grey" value="Gazebo/Grey"/>
+        <xacro:property name="gazebo_darkgrey" value="Gazebo/DarkGrey"/>
+
+        <!-- LINKS -->
+
+        <xacro:macro name="define_link" params="link_name physic_name visual_name material gazebo_material">
+            <link name="${prefix}${link_name}">
+                <xacro:property name="config_physical_parameters" value="${xacro.load_yaml(physical_parameters_file)}"/>
+                <xacro:property name="sec_inertia_parameters" value="${config_physical_parameters['inertia_parameters']}" />
+
+                <xacro:if value="${visual_name != ''}">
+                    <visual>
+                        <origin xyz="0 0 0" rpy="0 0 0"/>
+                        <geometry>
+                            <xacro:get_mesh name="${visual_name}" type="visual"/>
+                        </geometry>
+                        <material name="${material}"/>
+                    </visual>
+                    <collision>
+                        <origin xyz="0 0 0" rpy="0 0 0"/>
+                        <geometry>
+                            <xacro:get_mesh name="${visual_name}" type="collision"/>
+                        </geometry>
+                    </collision>
+                </xacro:if>
+
+                <inertial>
+                    <mass value="${sec_inertia_parameters[physic_name + '_mass']}"/>
+                    <origin
+                        xyz="${sec_inertia_parameters['center_of_mass'][physic_name]['x']}
+                            ${sec_inertia_parameters['center_of_mass'][physic_name]['y']}
+                            ${sec_inertia_parameters['center_of_mass'][physic_name]['z']}" 
+                        rpy="0 0 0"/>
+                    <inertia
+                        ixx="${sec_inertia_parameters[physic_name]['ixx']}" 
+                        iyy="${sec_inertia_parameters[physic_name]['iyy']}" 
+                        izz="${sec_inertia_parameters[physic_name]['izz']}" 
+                        ixy="${sec_inertia_parameters[physic_name]['ixy']}" 
+                        iyz="${sec_inertia_parameters[physic_name]['iyz']}" 
+                        ixz="${sec_inertia_parameters[physic_name]['ixz']}" />
+                </inertial>
+
+                <!-- <surface>
+                    <friction>
+                    <ode>
+                        <mu>0.8</mu>
+                        <mu2>0.8</mu2>
+                        <kp>1e15</kp>
+                        <kd>1e13</kd>
+                    </ode>
+                    </friction>
+                    <bounce>
+                    <restitution_coefficient>0.01</restitution_coefficient>
+                    <threshold>10</threshold>
+                    </bounce>
+                    <contact>
+                    <ode>
+                        <max_vel>0.01</max_vel>
+                        <minDepth>0</minDepth>
+                        <contact_surface_layer>0</contact_surface_layer>
+                    </ode>
+                    </contact>
+                </surface> -->
+
+            </link>
+
+            <xacro:if value="${sim_gazebo}">
+                <gazebo reference="${prefix}${link_name}">
+                    <material>${gazebo_material}</material>
+                    <selfCollide>true</selfCollide>
+                    <static>false</static>
+                    <turnGravityOff>false</turnGravityOff>
+                    <!-- <mu1>0.0</mu1>
+                    <mu2>0.0</mu2> -->
+                </gazebo>
+            </xacro:if>
+
+        </xacro:macro>
+
+        <link name="${prefix}base_footprint"/>
+        <link name="${prefix}base_link"/>
+        <link name="${prefix}imu_link"/>
+
+        <xacro:if value="${sim_gazebo}">
+            <gazebo>
+                <plugin name="odom_plugin" filename="libgazebo_ros_p3d.so">
+                    <always_on>true</always_on>
+                    <bodyName>${prefix}base_footprint</bodyName>
+                    <!-- <frame_name>world</frame_name> -->
+                    <topicName>odom_gazebo</topicName>
+                    <gaussianNoise>0.0</gaussianNoise>
+                    <xyzOffset>0 0 0</xyzOffset>
+                    <rpyOffset>0 0 0</rpyOffset>
+                    <updateRate>50.0</updateRate>
+                </plugin>
+            </gazebo>
+
+            <gazebo reference="${prefix}imu_link">
+                <sensor name="imu" type="imu">
+                    <always_on>true</always_on>
+                    <update_rate>5</update_rate>
+                    <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+                        <ros>
+                            <namespace>/</namespace>
+                            <remapping>~/out:=imu</remapping>
+                        </ros>
+                        <topicName>imu</topicName>
+                        <frameName>${prefix}imu_link</frameName>
+                        <updateRateHZ>10.0</updateRateHZ>
+                        <gaussianNoise>0.0</gaussianNoise>
+                        <xyzOffset>0 0 0</xyzOffset>
+                        <rpyOffset>0 0 0</rpyOffset>
+                    </plugin>
+                </sensor>
+            </gazebo>
+
+        </xacro:if>
+
+        <!-- Moby Agri -->
+        <!-- <xacro:if value="${moby_type == 'moby_agri'}">
+            <xacro:robot_link prefix="${prefix}" link_index="right_tract_link"   material="${wheel_material}" mesh_name="moby_wheel"/>
+            <xacro:robot_link prefix="${prefix}" link_index="left_tract_link"    material="${wheel_material}" mesh_name="moby_wheel"/>
+            <xacro:robot_link prefix="${prefix}" link_index="camera_module_link" material="${indy_material}"  mesh_name="camera_module"/>
+        </xacro:if> -->
+
+        <!-- Moby RP -->
+        <xacro:if value="${moby_type == 'moby_rp' or moby_type == 'moby_rp_v3'}">
+            <xacro:define_link link_name="top_frame"  physic_name="top_frame" visual_name="top_frame" material="${moby_top_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="bottom_frame"  physic_name="bottom_frame" visual_name="bottom_frame" material="${moby_bottom_material}" gazebo_material="${gazebo_grey}"/>
+            
+            <xacro:define_link link_name="fl_rot_link"  physic_name="rot_motor" visual_name="left_rot_motor" material="${moby_rot_motor}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="fl_tract_link"  physic_name="wheel" visual_name="left_wheel" material="${moby_wheel}" gazebo_material="${gazebo_darkgrey}"/>
+
+            <xacro:define_link link_name="fr_rot_link"  physic_name="rot_motor" visual_name="right_rot_motor" material="${moby_rot_motor}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="fr_tract_link"  physic_name="wheel" visual_name="right_wheel" material="${moby_wheel}" gazebo_material="${gazebo_darkgrey}"/>
+
+            <xacro:define_link link_name="rl_rot_link"  physic_name="rot_motor" visual_name="left_rot_motor" material="${moby_rot_motor}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="rl_tract_link"  physic_name="wheel" visual_name="left_wheel" material="${moby_wheel}" gazebo_material="${gazebo_darkgrey}"/>
+
+            <xacro:define_link link_name="rr_rot_link"  physic_name="rot_motor" visual_name="right_rot_motor" material="${moby_rot_motor}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="rr_tract_link"  physic_name="wheel" visual_name="right_wheel" material="${moby_wheel}" gazebo_material="${gazebo_darkgrey}"/>
+
+            <xacro:define_link link_name="link0" physic_name="link0" visual_name="link0" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="link1" physic_name="link1" visual_name="link1" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="link2" physic_name="link2" visual_name="link2" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="link3" physic_name="link3" visual_name="link3" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="link4" physic_name="link4" visual_name="link4" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="link5" physic_name="link5" visual_name="link5" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+            <xacro:define_link link_name="link6" physic_name="link6" visual_name="link6" material="${indy_material}" gazebo_material="${gazebo_white}"/>
+
+            <link name="${prefix}tcp"/>
+
+        </xacro:if>
+
+        <!-- JOINTS -->
+
+        <xacro:macro name="define_joint" params="joint_type joint_index parent_link child_link">
+            <xacro:property name="config_joint_limit_parameters" value="${xacro.load_yaml(joint_limits_parameters_file)}"/>
+            <xacro:property name="config_kinematics_parameters" value="${xacro.load_yaml(kinematics_parameters_file)}"/>
+            <xacro:property name="sec_kinematics" value="${config_kinematics_parameters['kinematics']}" />
+            <xacro:property name="sec_limits" value="${config_joint_limit_parameters['joint_limits']}"/>
+
+            <joint name="${prefix}${joint_index}" type="${joint_type}">
+                <parent link="${prefix}${parent_link}"/>
+                <child link="${prefix}${child_link}"/>
+                <origin
+                    xyz="${sec_kinematics[joint_index]['x']} 
+                        ${sec_kinematics[joint_index]['y']} 
+                        ${sec_kinematics[joint_index]['z']}" 
+                    rpy="${sec_kinematics[joint_index]['roll']}
+                        ${sec_kinematics[joint_index]['pitch']}
+                        ${sec_kinematics[joint_index]['yaw']}"/>
+                        
+                <xacro:if value="${joint_type == 'revolute' or joint_type == 'continuous'}">
+                    <axis xyz="0 0 1"/>
+                    <dynamics damping="0.1" friction="10.0"/>
+                </xacro:if>
+
+                <xacro:if value="${joint_type == 'revolute'}">
+                    <limit
+                        lower="${sec_limits[joint_index]['min_position']}" 
+                        upper="${sec_limits[joint_index]['max_position']}"
+                        effort="${sec_limits[joint_index]['max_effort']}" 
+                        velocity="${sec_limits[joint_index]['max_velocity']}"/>
+                </xacro:if>                
+            </joint>
+
+        </xacro:macro>
+
+        <xacro:macro name="camera_joint" params="camera_name">
+            <xacro:property name="config_kinematics_parameters" value="${xacro.load_yaml(kinematics_parameters_file)}"/>
+            <xacro:property name="sec_kinematics" value="${config_kinematics_parameters['kinematics']}" />
+            <xacro:sensor_d435 parent="base_link" use_nominal_extrinsics="false" add_plug="false" use_mesh="true" name="${prefix}${camera_name}" is_sim="${sim_gazebo}">
+                <origin
+                    xyz="${sec_kinematics[camera_name + '_joint']['x']} 
+                        ${sec_kinematics[camera_name + '_joint']['y']} 
+                        ${sec_kinematics[camera_name + '_joint']['z']}" 
+                    rpy="${sec_kinematics[camera_name + '_joint']['roll']}
+                        ${sec_kinematics[camera_name + '_joint']['pitch']}
+                        ${sec_kinematics[camera_name + '_joint']['yaw']}"/>
+            </xacro:sensor_d435>
+        </xacro:macro>
+
+        <xacro:macro name="lidar_joint" params="lidar_name">
+            <xacro:property name="config_kinematics_parameters" value="${xacro.load_yaml(kinematics_parameters_file)}"/>
+            <xacro:property name="sec_kinematics" value="${config_kinematics_parameters['kinematics']}" />
+            <xacro:tim_771s parent="base_link" name="${prefix}${lidar_name}" is_sim="${sim_gazebo}">
+                <origin
+                    xyz="${sec_kinematics[lidar_name + '_joint']['x']} 
+                        ${sec_kinematics[lidar_name + '_joint']['y']} 
+                        ${sec_kinematics[lidar_name + '_joint']['z']}" 
+                    rpy="${sec_kinematics[lidar_name + '_joint']['roll']}
+                        ${sec_kinematics[lidar_name + '_joint']['pitch']}
+                        ${sec_kinematics[lidar_name + '_joint']['yaw']}"/>
+            </xacro:tim_771s>
+        </xacro:macro>
+
+        <xacro:define_joint joint_type="fixed" joint_index="footprint_joint" parent_link="base_footprint" child_link="base_link"/>
+
+        <xacro:if value="${moby_type == 'moby_rp' or moby_type == 'moby_rp_v3'}">
+            <xacro:define_joint joint_type="fixed" joint_index="base_joint" parent_link="base_link" child_link="bottom_frame"/>
+            <xacro:define_joint joint_type="fixed" joint_index="frame_joint" parent_link="bottom_frame" child_link="top_frame"/>
+
+            <xacro:define_joint joint_type="fixed" joint_index="imu_joint" parent_link="base_link" child_link="imu_link"/>
+
+            <xacro:define_joint joint_type="revolute" joint_index="fl_rot_joint" parent_link="base_link" child_link="fl_rot_link"/>
+            <xacro:define_joint joint_type="continuous" joint_index="fl_tract_joint" parent_link="fl_rot_link" child_link="fl_tract_link"/>
+
+            <xacro:define_joint joint_type="revolute" joint_index="fr_rot_joint" parent_link="base_link" child_link="fr_rot_link"/>
+            <xacro:define_joint joint_type="continuous" joint_index="fr_tract_joint" parent_link="fr_rot_link" child_link="fr_tract_link"/>
+
+            <xacro:define_joint joint_type="revolute" joint_index="rl_rot_joint" parent_link="base_link" child_link="rl_rot_link"/>
+            <xacro:define_joint joint_type="continuous" joint_index="rl_tract_joint" parent_link="rl_rot_link" child_link="rl_tract_link"/>
+
+            <xacro:define_joint joint_type="revolute" joint_index="rr_rot_joint" parent_link="base_link" child_link="rr_rot_link"/>
+            <xacro:define_joint joint_type="continuous" joint_index="rr_tract_joint" parent_link="rr_rot_link" child_link="rr_tract_link"/>
+
+            <xacro:camera_joint camera_name="front_camera"/>
+            <xacro:camera_joint camera_name="rear_camera"/>
+
+            <xacro:if value="${moby_type == 'moby_rp'}">
+                <xacro:camera_joint camera_name="left_camera"/>
+                <xacro:camera_joint camera_name="right_camera"/>
+            </xacro:if>
+
+            <xacro:lidar_joint lidar_name="front_lidar"/>
+            <xacro:lidar_joint lidar_name="rear_lidar"/>
+
+            <xacro:define_joint joint_type="fixed" joint_index="base_arm" parent_link="base_link" child_link="link0"/>
+
+            <xacro:define_joint joint_type="revolute" joint_index="joint0" parent_link="link0" child_link="link1"/>
+            <xacro:define_joint joint_type="revolute" joint_index="joint1" parent_link="link1" child_link="link2"/>
+            <xacro:define_joint joint_type="revolute" joint_index="joint2" parent_link="link2" child_link="link3"/>
+            <xacro:define_joint joint_type="revolute" joint_index="joint3" parent_link="link3" child_link="link4"/>
+            <xacro:define_joint joint_type="revolute" joint_index="joint4" parent_link="link4" child_link="link5"/>
+            <xacro:define_joint joint_type="revolute" joint_index="joint5" parent_link="link5" child_link="link6"/>
+
+            <xacro:define_joint joint_type="fixed" joint_index="joint_tcp" parent_link="link6" child_link="tcp"/>
+        </xacro:if>
+
+        <xacro:moby_transmission prefix="${prefix}" hw_interface="${transmission_hw_interface}" moby_type="${moby_type}"/>
+
+    </xacro:macro>
+</robot>

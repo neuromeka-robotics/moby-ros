@@ -1,0 +1,136 @@
+<launch>
+    <!-- Arguments -->
+    <arg name="name"        default="moby"/>
+    <arg name="prefix"      default=""/>
+    <arg name="launch_rviz" default="true"/>
+    <arg name="use_joypad"  default="true"/>
+
+    <arg name="step_ip"         default="192.168.1.12"/>
+    <arg name="use_gyro"        default="true"/>
+    <arg name="moby_type"       default="moby_rp"/>
+    <arg name="indy_type"       default="indy7"/>
+    <arg name="body_length"     default="0.95"/>
+    <arg name="body_width"      default="0.6"/>
+    <arg name="lidar_margin"    default="0.1"/>
+    <arg name="ir_margin"       default="0.1"/>
+
+    <arg name="front_lidar_ip"  default="192.168.214.10"/>
+    <arg name="rear_lidar_ip"   default="192.168.214.11"/>
+
+    <arg name="front_camera_serial" default="213622078885"/>
+    <arg name="rear_camera_serial"  default="215322074938"/>
+    <arg name="right_camera_serial" default="215322073209"/>
+    <arg name="left_camera_serial"  default="213622078414"/>
+
+    <!-- Load parameters from YAML -->
+    <!-- <rosparam file="$(find moby_bringup)/param/moby_config.yaml" command="load"/> -->
+
+    <!-- Initialize the SICK lidars -->
+    <!-- <param name="front_lidar_ip" value="$(arg lidar_ip)" />
+    <param name="rear_lidar_ip" value="$(arg lidar_ip/rear)" /> -->
+
+    <node name="front_lidar" pkg="sick_scan" type="sick_generic_caller" output="screen" 
+        args="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch 
+                hostname:=$(arg front_lidar_ip) 
+                nodename:=front_lidar 
+                cloud_topic:=front_cloud 
+                frame_id:=front_lidar_link" />
+
+    <node name="rear_lidar" pkg="sick_scan" type="sick_generic_caller" output="screen" 
+        args="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch 
+                hostname:=$(arg rear_lidar_ip) 
+                nodename:=rear_lidar 
+                cloud_topic:=rear_cloud 
+                frame_id:=rear_lidar_link" />
+
+    <include file="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch">
+        <arg name="hostname"    value="$(arg front_lidar_ip)"/>
+        <arg name="nodename"    value="front_lidar"/>
+        <arg name="cloud_topic" value="front_cloud"/>
+        <arg name="frame_id"    value="front_lidar_link"/>
+    </include>
+
+    <include file="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch">
+        <arg name="hostname"    value="$(arg rear_lidar_ip)"/>
+        <arg name="nodename"    value="rear_lidar"/>
+        <arg name="cloud_topic" value="rear_cloud"/>
+        <arg name="frame_id"    value="rear_lidar_link"/>
+    </include>
+
+    <!-- Merge LIDAR scans -->
+    <node name="laserscan_multi_merger" pkg="ira_laser_tools" type="laserscan_multi_merger" output="screen">
+        <param name="destination_frame" value="base_footprint"/>
+        <param name="scan_destination_topic" value="/scan"/>
+        <param name="laserscan_topics" value="front_lidar/scan rear_lidar/scan"/>
+    </node>
+
+    <!-- Initialize REALSENSE cameras -->
+
+    <!-- <param name="front_camera_serial" value="$(arg realsense_serial/front)" />
+    <param name="rear_camera_serial" value="$(arg realsense_serial/rear)" />
+    <param name="right_camera_serial" value="$(arg realsense_serial/right)" />
+    <param name="left_camera_serial" value="$(arg realsense_serial/left)" /> -->
+
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="camera" value="front_camera"/>
+        <arg name="enable_pointcloud" value="true"/>
+        <arg name="serial_no" value="$(arg front_camera_serial)"/>
+    </include>
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="camera" value="rear_camera"/>
+        <arg name="enable_pointcloud" value="true"/>
+        <arg name="serial_no" value="$(arg rear_camera_serial)"/>
+    </include>
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="camera" value="right_camera"/>
+        <arg name="enable_pointcloud" value="true"/>
+        <arg name="serial_no" value="$(arg right_camera_serial)"/>
+    </include>
+        <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="camera" value="left_camera"/>
+        <arg name="enable_pointcloud" value="true"/>
+        <arg name="serial_no" value="$(arg left_camera_serial)"/>
+    </include>
+
+    <!-- Robot -->
+    <include file="$(find moby_description)/launch/moby_description.launch">
+        <arg name="prefix"      value="$(arg prefix)"/>
+        <arg name="name" 	    value="$(arg name)"/>
+        <arg name="moby_type" 	value="$(arg moby_type)"/>
+        <arg name="rviz" 		value="false"/>
+        <arg name="sim_gazebo"  default="false"/>
+        <arg name="joint_state" default="false"/>
+    </include>
+
+    <!-- Moby driver -->
+    <node name="moby_dpc3" pkg="moby_bringup" type="moby_driver.py" output="screen">
+        <param name="step_ip"       value="$(arg step_ip)"/>
+        <param name="use_gyro"      value="$(arg use_gyro)"/>
+        <param name="moby_type"     value="$(arg moby_type)"/>
+        <param name="body_length"   value="$(arg body_length)"/>
+        <param name="body_width"    value="$(arg body_width)"/>
+        <param name="lidar_margin"  value="$(arg lidar_margin)"/>
+        <param name="ir_margin"     value="$(arg ir_margin)"/>
+    </node>
+
+    <!-- Indy driver -->
+    <node name="indy_driver" pkg="moby_bringup" type="indy_driver.py" output="screen">
+        <param name="indy_ip"       value="$(arg step_ip)"/>
+        <param name="indy_type"     value="$(arg indy_type)"/>
+    </node>
+
+    <!-- EKF localization node -->
+    <node name="ekf_filter_node" pkg="robot_localization" type="ekf_localization_node" output="screen">
+        <rosparam command="load" file="$(find moby_bringup)/param/ekf.yaml"/>
+        <remap from="/odometry/filtered" to="/odom"/>
+    </node>
+
+    <!-- Rviz -->
+    <node if="$(arg launch_rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(find moby_bringup)/rviz_config/moby.rviz"/>
+
+    <!-- Joy controller -->
+    <!-- <include if="$(arg use_joypad)" file="$(find moby_bringup)/launch/moby_controller.launch">
+        <arg name="moby_type" value="$(arg moby_type)"/>
+    </include> -->
+
+</launch>

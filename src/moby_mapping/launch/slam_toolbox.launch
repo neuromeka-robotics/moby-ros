@@ -1,0 +1,9 @@
+<launch>
+    <arg name="use_sim_time" default="false" />
+
+    <node pkg="slam_toolbox" type="sync_slam_toolbox_node" name="slam_toolbox" output="screen">
+        <param name="use_sim_time" value="$(arg use_sim_time)" />
+        <rosparam command="load" file="$(find moby_mapping)/config/moby_slam_toolbox.yaml" />
+    </node>
+
+</launch>

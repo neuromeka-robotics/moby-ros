@@ -1,0 +1,36 @@
+<launch>
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find moby_navigation)/rviz/moby_navigation.rviz" required="true" /> -->
+  <!-- <param name="use_sim_time" value="true"/> -->
+  <arg name="use_sim_time" default="false" />
+
+  <!-- Load the map -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find moby_navigation)/map/example.yaml" output="screen">
+    <param name="use_sim_time" value="$(arg use_sim_time)" />
+  </node>
+
+  <!-- AMCL-->
+  <include file="$(find moby_navigation)/launch/amcl.launch">
+  </include>
+
+  <!-- Move Base -->
+  <node name="move_base" pkg="move_base" type="move_base" output="screen">
+    <param name="use_sim_time" type="bool" value="$(arg use_sim_time)"/>
+	<param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS"/>
+	<param name="base_global_planner" value="global_planner/GlobalPlanner"/>
+
+	<rosparam file="$(find moby_navigation)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
+	<rosparam file="$(find moby_navigation)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
+	<rosparam file="$(find moby_navigation)/param/local_costmap_params.yaml" command="load" />
+	<rosparam file="$(find moby_navigation)/param/global_costmap_params.yaml" command="load" />
+	<rosparam file="$(find moby_navigation)/param/move_base_params.yaml" command="load" />
+
+	<rosparam file="$(find moby_navigation)/param/base_local_planner_params.yaml" command="load" />
+	<!-- <rosparam file="$(find moby_navigation)/param/base_global_planner_params.yaml" command="load" /> -->
+
+	<remap from="cmd_vel" to="/cmd_vel"/>
+  </node>
+
+  <!-- Static Transform Publisher -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 100"/> -->
+
+</launch>
