@@ -26,6 +26,9 @@ devel*/**
 .vscode*/
 .vscode*/*
 .vscode*/**
+**/__pycache__/
 *.bak
 *.bk
 src/CMakeLists.txt
+*test_map.db
+*.bag

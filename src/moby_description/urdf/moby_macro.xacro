@@ -120,7 +120,7 @@
                 <plugin name="odom_plugin" filename="libgazebo_ros_p3d.so">
                     <always_on>true</always_on>
                     <bodyName>${prefix}base_footprint</bodyName>
-                    <!-- <frame_name>world</frame_name> -->
+                    <!-- <topicName>odom</topicName> -->
                     <topicName>odom_gazebo</topicName>
                     <gaussianNoise>0.0</gaussianNoise>
                     <xyzOffset>0 0 0</xyzOffset>
@@ -129,10 +129,10 @@
                 </plugin>
             </gazebo>
 
-            <gazebo reference="${prefix}imu_link">
+            <!-- <gazebo reference="${prefix}imu_link">
                 <sensor name="imu" type="imu">
                     <always_on>true</always_on>
-                    <update_rate>5</update_rate>
+                    <update_rate>20</update_rate>
                     <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
                         <ros>
                             <namespace>/</namespace>
@@ -146,8 +146,7 @@
                         <rpyOffset>0 0 0</rpyOffset>
                     </plugin>
                 </sensor>
-            </gazebo>
-
+            </gazebo> -->
         </xacro:if>
 
         <!-- Moby Agri -->

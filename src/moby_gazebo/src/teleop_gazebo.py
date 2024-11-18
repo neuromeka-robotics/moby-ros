@@ -96,7 +96,7 @@ class KeyboardControl:
 
         # Initialize Twist message parameters
         self.speed = 0.5
-        self.turn = 1.0
+        self.turn = 0.2
         self.x = 0.0
         self.y = 0.0
         self.th = 0.0

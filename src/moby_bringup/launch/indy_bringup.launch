@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="indy_ip"       default=""/>
+    <arg name="indy_type" 	  default="indy7"/>
+
+    <node name="indy_driver" pkg="moby_bringup" type="indy_driver.py" output="screen">
+        <param name="indy_ip"       value="$(arg indy_ip)"/>
+        <param name="indy_type"     value="$(arg indy_type)"/>
+    </node>
+</launch>

@@ -6,7 +6,9 @@
 	<arg name="name" 		    default="moby"/>
   <arg name="moby_type" 	default="moby_rp"/>
   <arg name="rviz" 	      default="false"/>
-  <arg name="world_file"  default="example"/>
+  <arg name="world_file"  default="room"/>
+
+  <env name="GAZEBO_MODEL_PATH" value="$(optenv GAZEBO_MODEL_PATH):$(find moby_gazebo)/models" />
 
   <include file="$(find moby_description)/launch/moby_description.launch">
     <arg name="prefix"      value="$(arg prefix)"/>
@@ -56,11 +58,15 @@
   <!-- Controller file -->
   <rosparam file="$(find moby_gazebo)/controller/moby_rp_controllers.yaml" command="load"/>
 
+  <!-- <node name="joint_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
+    args="joint_state_controller joint_trajectory_controller traction_motor_controller rotation_motor_controller"/> -->
   <node name="joint_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
-    args="joint_state_controller joint_trajectory_controller traction_motor_controller rotation_motor_controller"/>
-  
+    args="joint_state_controller joint_group_controller traction_motor_controller rotation_motor_controller"/>
+
+  <arg name="dummy_odom" 	default="false"/>
   <node pkg="moby_gazebo" type="swerve_drive_controller.py" name="swerve_drive_controller" output="screen">
-    <param name="use_sim_time" value="true" />
+    <!-- <param name="use_sim_time" value="true" /> -->
+    <param name="dummy_odom"   value="$(arg dummy_odom)"/>
   </node>
 
   <!-- for servoing -->

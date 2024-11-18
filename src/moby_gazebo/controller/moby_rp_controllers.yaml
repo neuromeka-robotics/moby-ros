@@ -24,6 +24,17 @@ rotation_motor_controller:
     - rr_rot_joint
   state_publish_rate: 50
 
+joint_group_controller:
+  type: position_controllers/JointGroupPositionController
+  joints:
+    - joint0
+    - joint1
+    - joint2
+    - joint3
+    - joint4
+    - joint5
+  state_publish_rate: 50
+
 joint_trajectory_controller:
   type: position_controllers/JointTrajectoryController
   joints:

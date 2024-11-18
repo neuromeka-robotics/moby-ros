@@ -99,8 +99,6 @@ class MobyROSConnector:
         self.duration_log = rospy.get_param('~duration_log', 30.0)
         self.reset_log()
 
-        self.vx_max_ir, self.vx_min_ir = np.inf, -np.inf
-        self.vy_max_ir, self.vy_min_ir = np.inf, -np.inf
         self.vx_max_lidar, self.vx_min_lidar = np.inf, -np.inf
         self.vy_max_lidar, self.vy_min_lidar = np.inf, -np.inf
         self.scan_ranges_stack = deque(maxlen=2)
@@ -178,12 +176,6 @@ class MobyROSConnector:
                 self.moby = MobyClient(self.step_ip)
                 self.moby.use_gyro_for_odom(self.use_gyro)
                 self.moby.reset_gyro()
-                # ir_data = self.moby.get_ir_data()
-                # if self.ir_pub_dict is None:
-                #     self.ir_pub_dict = {
-                #         ir_key: rospy.Publisher(f"{ir_key}_range", Range, queue_size=10)
-                #         for ir_key in ir_data.keys()
-                #     }
             except Exception as e:
                 rospy.logerr(f"CANNOT CONNECT TO STEP ON {self.step_ip}. TRY RECONNECT EVERY SECOND")
                 rospy.logerr(str(e))
@@ -200,10 +192,10 @@ class MobyROSConnector:
                         self.ecat.set_servo(4, False)
                         self.ecat.set_servo(3, True)
                         self.ecat.set_servo_rx(2, 15, OP_MODE_CYCLIC_SYNC_TORQUE, 0, 0, 0)
-                        self.ecat.set_maxTorque(2, 4000)
-                        self.ecat.set_max_motor_speed(2, 5000)
-                        self.ecat.set_maxTorque(3, 65000)
-                        self.ecat.set_max_motor_speed(3, 10000000)
+                        # self.ecat.set_maxTorque(2, 4000)
+                        # self.ecat.set_max_motor_speed(2, 5000)
+                        # self.ecat.set_maxTorque(3, 65000)
+                        # self.ecat.set_max_motor_speed(3, 10000000)
                         assert self.ecat.is_system_ready()[4] == 0
                     else:
                         rospy.logwarn(f"Slave number {slave_num} is not expected for MOBY-AGRI. "
@@ -213,34 +205,6 @@ class MobyROSConnector:
                 rospy.logerr(str(e))
                 self.ecat = None
         rospy.loginfo(f"Moby Connected to : {self.step_ip}")
-
-    # def publish_ir(self): #IR WAS REMOVE
-    #     try:
-    #         ir_data = self.moby.get_ir_data()
-    #         vx_max_ir, vx_min_ir, vy_max_ir, vy_min_ir = np.inf, -np.inf, np.inf, -np.inf
-    #         for ir_key, ir_val in ir_data.items():
-    #             self.ir_pub_dict[ir_key].publish(
-    #                 Range(header=Header(frame_id=f"{ir_key}_link", stamp=rospy.Time.now()),
-    #                       radiation_type=Range.INFRARED,
-    #                       field_of_view=0.436,  # deg2rad(25)
-    #                       min_range=0.0,
-    #                       max_range=0.3,
-    #                       range=ir_val / 1000
-    #                       )
-    #             )
-    #             if ir_val / 1000 < self.ir_margin:
-    #                 if 'front' in ir_key:
-    #                     vx_max_ir = 0
-    #                 if 'rear' in ir_key:
-    #                     vx_min_ir = 0
-    #                 if 'left' in ir_key:
-    #                     vy_max_ir = 0
-    #                 if 'right' in ir_key:
-    #                     vy_min_ir = 0
-    #         self.vx_max_ir, self.vx_min_ir = vx_max_ir, vx_min_ir
-    #         self.vy_max_ir, self.vy_min_ir = vy_max_ir, vy_min_ir
-    #     except Exception as e:
-    #         rospy.logerr(f"Error in publish_ir: {e}")
 
     def lidar_callback(self, scan):
         try:
@@ -300,8 +264,9 @@ class MobyROSConnector:
     def twist_callback(self, twist):
         try:
             if self.moby is not None:
-                vx = np.clip(twist.linear.x, max(self.vx_min_ir, self.vx_min_lidar), min(self.vx_max_ir, self.vx_max_lidar))
-                vy = np.clip(twist.linear.y, max(self.vy_min_ir, self.vy_min_lidar), min(self.vy_max_ir, self.vy_max_lidar))
+                vx = np.clip(twist.linear.x, self.vx_min_lidar, self.vx_max_lidar)
+                vy = np.clip(twist.linear.y, self.vy_min_lidar, self.vy_max_lidar)
+
                 priority = twist.linear.z
                 vw = twist.angular.z
                 priority_saved = self.priority_saved()
@@ -508,7 +473,6 @@ class MobyROSConnector:
                     self.ecat.set_servo(3, True)
                     self.ecat.set_servo_rx(2, 15, OP_MODE_CYCLIC_SYNC_TORQUE, 0, 0, 0)
                     self.stop_send_cam_vel = True
-            # # self.publish_ir()
         except Exception as e:
             rospy.logerr(f"Error in timer_callback: {e}")
 

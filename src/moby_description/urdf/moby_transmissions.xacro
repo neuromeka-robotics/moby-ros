@@ -3,8 +3,6 @@
 
     <xacro:macro name="moby_transmission" params="prefix hw_interface moby_type">
 
-        <!--try to not input hw_interface-->
-
         <xacro:macro name="define_pos_transmission" params="tran joint motor">
             <transmission name="${prefix}${tran}">
                 <type>transmission_interface/SimpleTransmission</type>

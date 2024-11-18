@@ -41,7 +41,6 @@ The following software needs to be installed:
     pip3 install --upgrade neuromeka
     ```
 
-
 #### Install ROS noetic dependent packages
 ```bash
 sudo apt install  ros-noetic-ira-laser-tools \
@@ -63,6 +62,8 @@ sudo apt install  ros-noetic-ira-laser-tools \
                   ros-noetic-gazebo-ros \ 
                   ros-noetic-gazebo-ros-pkgs \
                   ros-noetic-gazebo-ros-control
+                  ros-noetic-ros-controllers \
+                  ros-noetic-ros-control \
 ```
 
 Install libraries:
@@ -108,6 +109,13 @@ source devel/setup.bash
 
 Use **moby_type** to choose specific robot **(moby_rp, moby_rp_v3)**.\
 If not specified, the default value will be moby_rp.
+
+### Robot Description
+
+To start robot description
+```bash
+roslaunch moby_description moby_description.launch moby_type:=moby_rp
+```
 
 ### Simulation Robot
 

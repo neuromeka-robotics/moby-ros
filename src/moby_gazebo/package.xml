@@ -29,9 +29,9 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>tf</run_depend>
 
-  <export>
+  <!-- <export>
     <gazebo_ros gazebo_media_path="${prefix}" />
     <gazebo_ros gazebo_model_path="${prefix}/models" />
-  </export>
+  </export> -->
 
 </package>
