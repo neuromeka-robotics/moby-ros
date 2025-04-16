@@ -22,39 +22,23 @@
     <arg name="right_camera_serial" default="215322073209"/>
     <arg name="left_camera_serial"  default="213622078414"/>
 
-    <!-- Load parameters from YAML -->
-    <!-- <rosparam file="$(find moby_bringup)/param/moby_config.yaml" command="load"/> -->
-
-    <!-- Initialize the SICK lidars -->
-    <!-- <param name="front_lidar_ip" value="$(arg lidar_ip)" />
-    <param name="rear_lidar_ip" value="$(arg lidar_ip/rear)" /> -->
-
-    <!-- <node name="front_lidar" pkg="sick_scan" type="sick_generic_caller" output="screen" 
-        args="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch 
-                hostname:=$(arg front_lidar_ip) 
-                nodename:=front_lidar 
-                cloud_topic:=front_cloud 
-                frame_id:=front_lidar_link" />
-
-    <node name="rear_lidar" pkg="sick_scan" type="sick_generic_caller" output="screen" 
-        args="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch 
-                hostname:=$(arg rear_lidar_ip) 
-                nodename:=rear_lidar 
-                cloud_topic:=rear_cloud 
-                frame_id:=rear_lidar_link" /> -->
-
+    <!-- Initialize LIDARS -->
     <include file="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch">
-        <arg name="hostname"    value="$(arg front_lidar_ip)"/>
-        <arg name="nodename"    value="front_lidar"/>
+        <arg name="hostname" value="$(arg front_lidar_ip)"/>
+        <arg name="nodename" value="front_lidar"/>
         <arg name="cloud_topic" value="front_cloud"/>
-        <arg name="frame_id"    value="front_lidar_link"/>
+        <arg name="frame_id" value="front_lidar_link"/>
+        <arg name="laserscan_topic" value="front_lidar/scan"/>
+        <arg name="tf_publish_rate" value="0"/>
     </include>
 
     <include file="$(find sick_scan_xd)/launch/sick_tim_7xxS.launch">
-        <arg name="hostname"    value="$(arg rear_lidar_ip)"/>
-        <arg name="nodename"    value="rear_lidar"/>
+        <arg name="hostname" value="$(arg rear_lidar_ip)"/>
+        <arg name="nodename" value="rear_lidar"/>
         <arg name="cloud_topic" value="rear_cloud"/>
-        <arg name="frame_id"    value="rear_lidar_link"/>
+        <arg name="frame_id" value="rear_lidar_link"/>
+        <arg name="laserscan_topic" value="rear_lidar/scan"/>
+        <arg name="tf_publish_rate" value="0"/>
     </include>
 
     <!-- Merge LIDAR scans -->
@@ -65,31 +49,18 @@
     </node>
 
     <!-- Initialize REALSENSE cameras -->
-
-    <!-- <param name="front_camera_serial" value="$(arg realsense_serial/front)" />
-    <param name="rear_camera_serial" value="$(arg realsense_serial/rear)" />
-    <param name="right_camera_serial" value="$(arg realsense_serial/right)" />
-    <param name="left_camera_serial" value="$(arg realsense_serial/left)" /> -->
-
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="front_camera"/>
         <arg name="enable_pointcloud" value="true"/>
         <arg name="serial_no" value="$(arg front_camera_serial)"/>
+        <arg name="align_depth" value="true"/>
     </include>
+
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="rear_camera"/>
         <arg name="enable_pointcloud" value="true"/>
         <arg name="serial_no" value="$(arg rear_camera_serial)"/>
-    </include>
-    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="camera" value="right_camera"/>
-        <arg name="enable_pointcloud" value="true"/>
-        <arg name="serial_no" value="$(arg right_camera_serial)"/>
-    </include>
-        <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="camera" value="left_camera"/>
-        <arg name="enable_pointcloud" value="true"/>
-        <arg name="serial_no" value="$(arg left_camera_serial)"/>
+        <arg name="align_depth" value="true"/>
     </include>
 
     <!-- Robot -->
