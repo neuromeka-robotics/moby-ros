@@ -40,6 +40,10 @@ The following software needs to be installed:
     pip3 install neuromeka
     pip3 install --upgrade neuromeka
     ```
+    
+    ```bash
+    pip3 install opencv-contrib-python
+    ```
 
 #### Install ROS noetic dependent packages
 ```bash
@@ -61,9 +65,11 @@ sudo apt install  ros-noetic-ira-laser-tools \
                   ros-noetic-octomap-rviz-plugins \
                   ros-noetic-gazebo-ros \ 
                   ros-noetic-gazebo-ros-pkgs \
-                  ros-noetic-gazebo-ros-control
+                  ros-noetic-gazebo-ros-control \
                   ros-noetic-ros-controllers \
                   ros-noetic-ros-control \
+                  ros-noetic-cv-bridge
+
 ```
 
 Install libraries:

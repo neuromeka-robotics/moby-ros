@@ -65,8 +65,10 @@ class IndyROSConnector:
         
     # Connect to Indy
     def connect(self):
-        print("ROBOT IP: ", self.indy_ip)
-        print("ROBOT TYPE: ", self.indy_type)
+        # print("ROBOT IP: ", self.indy_ip)
+        # print("ROBOT TYPE: ", self.indy_type)
+        rospy.loginfo(f"ROBOT IP: {self.indy_ip}")
+        rospy.loginfo(f"ROBOT TYPE: {self.indy_type}")
         self.robot_dof = 7 if (self.indy_type == 'indyrp2' or self.indy_type == 'indyrp2_v2') else 6
         self.indy = IndyDCP3(self.indy_ip)
         # self.ecat = EtherCAT(self.indy_ip)
